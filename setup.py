@@ -9,6 +9,7 @@ setup(
     author_email='oliwerix@oliwerix.com',
     license='AGPLv3.0',
     include_package_data=True,
+    package_data={'nginx-generator':['snippets/*']}
     install_requires=['validators','click'],
     packages=find_packages(),
     entry_points=dict(
