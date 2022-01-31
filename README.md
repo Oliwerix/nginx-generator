@@ -1,4 +1,5 @@
 # nginx-generator
+[![Upload Python Package](https://github.com/Oliwerix/nginx-generator/actions/workflows/python-publish.yml/badge.svg)](https://github.com/Oliwerix/nginx-generator/actions/workflows/python-publish.yml)
 Command line interface for generating nginx config files
 
 ## Features
