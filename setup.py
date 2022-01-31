@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='nginx-generator',
-    version='0.1.1',
+    version='0.1.2',
     description='Generate nginx configs interactivly',
     url='http://github.com/Oliwerix/nginx-generator',
     author='Oliver Wagner',
