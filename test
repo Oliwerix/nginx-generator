@@ -1,5 +1,0 @@
-server {
-	server_name: oliwerix.com;
-	listen: 80;
-	root: ;
-}
