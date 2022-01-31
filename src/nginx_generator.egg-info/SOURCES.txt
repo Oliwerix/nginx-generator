@@ -1,10 +1,13 @@
+MANIFEST.in
 README.md
 pyproject.toml
 setup.cfg
+setup.py
 src/nginx_generator/__init__.py
 src/nginx_generator/app.py
 src/nginx_generator.egg-info/PKG-INFO
 src/nginx_generator.egg-info/SOURCES.txt
 src/nginx_generator.egg-info/dependency_links.txt
 src/nginx_generator.egg-info/entry_points.txt
+src/nginx_generator.egg-info/requires.txt
 src/nginx_generator.egg-info/top_level.txt
