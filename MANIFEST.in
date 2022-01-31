@@ -1,1 +1,1 @@
-include snippets/
+include src/nginx_generator/snippets/*
