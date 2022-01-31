@@ -8,6 +8,7 @@ config = {
     "php-fpm": "7.4",
     "nginx-blocks": "/etc/nginx/sites-enabled/"
         }
+# The one variable to rule them all
 website = dict()
 
 abspath = os.path.abspath(__file__)
@@ -16,16 +17,22 @@ os.chdir(dname)
 
 @click.command()
 @click.argument('domain')
-@click.option('--proxy', help="Proxy address")
-@click.option('--root', type=click.Path(), help="Document root")
+@click.option('--proxy', '-p', help="Proxy address")
+@click.option('--root', '-r', type=click.Path(), help="Document root")
 @click.option('--php', is_flag=True, help="Enables php-fpm")
 @click.option('--php-version', help=f"Set php-fpm version", default=config['php-fpm'])
+@click.option('--filename', help="Set config filename (default: domain)")
 @click.option('--no-ssl', is_flag=True, help="Disables automatic certificate using certbot")
 @click.option('--edit', is_flag=True, help="Open editor after install")
-@click.option('--yes', '-Y', is_flag=True)
+@click.option('--yes', '-y', is_flag=True, help="Do not prompt user")
 @click.option('--dry-run', is_flag=True, help="Writes to temporary file (implies --edit, --no-ssl)")
-def main(domain, proxy, root, php, php_version, no_ssl, edit, yes, dry_run):
+@click.option('--ignore-nginx-errors', is_flag=True, help="Don't exit on nginx errors")
+def main(domain, proxy, root, php, php_version,filename, no_ssl, edit, yes, dry_run, ignore_nginx_errors):
     """Generate a nginx config file"""
+    if(ignore_nginx_errors):
+        click.secho("Warning: ignoring nginx errors", fg="yellow")
+    nginx_test(_exit=not ignore_nginx_errors)
+    
     globals()['yes'] = yes
     globals()['dry_run'] = dry_run
     global website
@@ -38,25 +45,31 @@ def main(domain, proxy, root, php, php_version, no_ssl, edit, yes, dry_run):
         no_ssl = True
     domains = domain.split(",")
     domain = domains[0]
+
     if os.getuid() != 0:
-        print("You must be root to run this script")
+        click.echo("You must be root to run this script")
         return 1
 
     website["ssl"] = not no_ssl
     checkDomains(domains)
+
+    
     website["domain"] = domain
     website["domains"] = domains
+    website["filename"] = domain if filename is None else filename
     # if both are set
     if not proxy is None and not root is None:
-        print("Proxy and root can't mix")
+        click.echo("Proxy and root can't mix")
         return 1
     # if none is set
     if proxy is None and root is None:
         if confirm("Use reverse proxy?", default=True):
-            website["proxy"] = click.prompt("Backend address: ")
+            website["proxy"] = click.prompt("Proxy backend address")
         else:
-            website["root"] = click.prompt("Document root: ", type=click.Path())
-    
+            # Click ignores type for some reason 
+            #website["root"] = click.prompt("Document root", type=click.Path(file_okay=False))
+            website["root"] = click.prompt("Document root")
+    # This needs to be like this because the check will fail 
     if not proxy is None:
         website["proxy"] = proxy
     if not root is None:
@@ -65,40 +78,43 @@ def main(domain, proxy, root, php, php_version, no_ssl, edit, yes, dry_run):
 
     if "proxy" in website:
         if not validators.url(website["proxy"]):
-            print("Proxy url not valid")
+            click.echo("Proxy url not valid")
             return 1 
 
-    if not check():
-        return 1
-
+    check()
     if dry_run:
-        filename = f"/tmp/{website['domain']}"
+        filename = f"/tmp/{website['filename']}"
     else:
-        filename = config['nginx-blocks']+website['domain']
+        filename = config['nginx-blocks']+website['filename']
 
 
-    print(f"Writing config to {filename}")
+    click.echo(f"Writing config to {filename}")
     write(filename)
-    nginx_reload()
+    if nginx_test():
+        nginx_reload()
+    else:
+        click.secho("Warning: nginx not reloaded!", fg="yellow")
     if website["ssl"]:
-       certbot(website["domains"]) 
+        certbot(website["domains"]) 
     if edit:
-        print("a")
+        click.echo("a")
         editConfig(filename)
+    click.secho(f"Generated config is at {filename}", fg='green')
         
 def checkDomains(domains):
     """Verify domains"""
     for domain in domains:
         if not validators.domain(domain):
-            print(f"domain {domain} is not valid!")
+            click.echo(f"domain {domain} is not valid!")
             exit()
 def write(filename):
     """Write to file"""
     if os.path.exists(filename):
-        if not confirm("File exists! Overwrite?"):
+        if not confirm(click.style("File exists! Overwrite?", fg='red')):
             return 0
     with open(filename, 'w') as f:
         def copyFile(filename):
+            """copy contens of input filename to output file `f`"""
             with open(filename) as cp:
                 for line in cp:
                     f.write(line)
@@ -123,29 +139,55 @@ def write(filename):
         f.write("}\n")
 
 def certbot(domains):
-    print(f"Starting certbot for domains {' '.join(domains)}")
+    click.echo(f"Starting certbot for domains {' '.join(domains)}")
     """Runs certbot for specified domain"""
-    subprocess.run(["certbot","--nginx","-d",','.join(domains)])
+    subprocess.run(["certbot","--nginx","-d",','.join(domains), "-n" if yes else ""])
 def nginx_reload():
     """Reloads nginx"""
     subprocess.run(["systemctl","reload","nginx"])
-def nginx_test():
-    """Nginx test config"""
-    subprocess.run(["nginx", "-t"])
+    click.secho("Reloaded nginx", fg="green")
+def nginx_test(alert=True, _exit=False):
+    """Nginx test config, returns True if OK"""
+    try:
+        subprocess.run(["nginx", "-t"], check=True, capture_output=True)
+    except subprocess.CalledProcessError:
+        if alert:
+            click.secho("Error in your nginx configuration:", fg="red")
+            subprocess.run(["nginx", "-T"])
+        if _exit:
+            exit()
+        return False
+    else:
+        return True
 def editConfig(filename):
-    EDITOR = os.environ.get('EDITOR')
-    if EDITOR is None:
-        EDITOR = "vim"
-    subprocess.call([EDITOR, filename])
-    nginx_test()
-def confirm(prompt, default=False):
-    if not yes:
-        return click.confirm(prompt, default)
+    """Open editor"""
+    def editFile(filename):
+        EDITOR = os.environ.get('EDITOR')
+        if EDITOR is None:
+            EDITOR = "vim"
+        subprocess.call([EDITOR, filename])
+
+    editFile(filename)
+    while not nginx_test():
+        # this is more or less like a do while loop
+        confirm("Want to edit the file again?", abort=True, default=True, ignore_yes=True)
+        editFile(filename)
+
+def confirm(prompt, default=False, abort=False, ignore_yes=False):
+    if not yes or ignore_yes:
+        return click.confirm(prompt, default, abort)
     return True
 def check():
     """Display settings and query user"""
-    for element, key in website.items():
-        print(f"   {element}: {key}")
-    return confirm("Are the values correct?")
+    if not yes:
+        click.secho("Please verify!", fg='yellow')
+    for key, element in website.items():
+        # Omit lists shorter than one element
+        if type(element) is list:
+            if len(element) > 1:
+                click.echo(f"   {key}: {', '.join(element)}")
+        else:
+            click.echo(f"   {key}: {element}")
+    confirm("Are the values correct?", abort=True)
 if __name__ == "__main__":
     main()
