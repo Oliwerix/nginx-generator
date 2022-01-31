@@ -133,7 +133,7 @@ def nginx_test():
     """Nginx test config"""
     subprocess.run(["nginx", "-t"])
 def editConfig(filename):
-    EDITOR = os.environ.get('EDITOR' 'vim')
+    EDITOR = os.environ.get('EDITOR')
     if EDITOR is None:
         EDITOR = "vim"
     subprocess.call([EDITOR, filename])
