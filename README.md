@@ -46,11 +46,11 @@ Don't get SSL and open an editor after file creation
 # Installation
 nginx-generator can be installed using [pip](https://pip.pypa.io/)
     sudo pip3 install nginx-generator
-### Requirements
+## Requirements
 The script is based on python, and is avaliable on PyPI
  - [python](https://www.python.org/) (>=3.7)
  - pip
-### Optional
+## Optional
  - [certbot](https://certbot.eff.org/) (for autoamtic SSL certificates)
  - php with php-fpm (for php support)
 
