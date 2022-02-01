@@ -1,20 +1,19 @@
 # nginx-generator
 [![Upload Python Package](https://github.com/Oliwerix/nginx-generator/actions/workflows/python-publish.yml/badge.svg)](https://github.com/Oliwerix/nginx-generator/actions/workflows/python-publish.yml)
 
-Command line interface for generating nginx config files
-
 ## Features
- - Reverse proxy support
+ - Reverse **proxy** support
  - Static file support
- - Php support
- - Certbot support
+ - **PHP** support
+ - **Certbot** support
+ - Syntax checking
 
-## Usage
-    Usage: app.py [OPTIONS] DOMAIN
-    
-      Generate a nginx config file
-    
-    Options:
+# Description
+**nginx-generator** is a command-line program for generating nginx config files. It requires python 3.7+. nginx-generator can generate nginx-config files, aquire ssl certificates using **certbot**, enable php and much more. It is tested on Ubutnu server 20.04
+
+    nginx-generator [OPTIONS] DOMAIN
+
+# Options
       -p, --proxy TEXT       Proxy address
       -r, --root PATH        Document root
       --php                  Enables php-fpm
@@ -27,16 +26,30 @@ Command line interface for generating nginx config files
       --ignore-nginx-errors  Don't exit on nginx errors
       --help                 Show this message and exit.
 
-### Examples
+# Examples
+Serve a static site on `example.com` and `www.example.com` with the static files located at `/var/www/html`, you will get an SSL certificate automatically.
+
     sudo nginx-generator example.com,www.example.com --root /var/www/html
+
+Proxy a backend on `http://localhost:8080`
+
     sudo nginx-generator example.com,www.example.com --proxy http://localhost:8080/
+
+Serve a php website with `php8.0`
+
     sudo nginx-generator example.com --root /var/www/html --php --php-version 8.0
-## Installation
+
+Don't get SSL and open an editor after file creation
+    
+    sudo nginx-generator example.com --no-ssl --edit
+
+# Installation
+nginx-generator can be installed using [pip](https://pip.pypa.io/)
     sudo pip3 install nginx-generator
 ### Requirements
 The script is based on python, and is avaliable on PyPI
- - python (>=3.7)
+ - [python](https://www.python.org/) (>=3.7)
  - pip
 ### Optional
- - certbot (for autoamtic SSL certificates)
- - php-fpm (for php support)
+ - [certbot](https://certbot.eff.org/) (for autoamtic SSL certificates)
+ - php with php-fpm (for php support)
