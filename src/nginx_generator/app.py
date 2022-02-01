@@ -27,14 +27,19 @@ os.chdir(dname)
 @click.option('--yes', '-y', is_flag=True, help="Do not prompt user")
 @click.option('--dry-run', is_flag=True, help="Writes to temporary file (implies --edit, --no-ssl)")
 @click.option('--ignore-nginx-errors', is_flag=True, help="Don't exit on nginx errors")
-def main(domain, proxy, root, php, php_version,filename, no_ssl, edit, yes, dry_run, ignore_nginx_errors):
+@click.option('-v',is_flag=True, help="Verbose")
+def main(domain, proxy, root, php, php_version,filename, no_ssl, edit, yes, dry_run, ignore_nginx_errors, v):
     """Generate a nginx config file"""
+    if os.getuid() != 0:
+        click.echo("You must be root to run this script")
+        return 1
     if(ignore_nginx_errors):
         click.secho("Warning: ignoring nginx errors", fg="yellow")
     nginx_test(_exit=not ignore_nginx_errors)
     
     globals()['yes'] = yes
     globals()['dry_run'] = dry_run
+    globals()['verbose'] = v
     global website
     if php:
         website["php"] = php
@@ -46,9 +51,6 @@ def main(domain, proxy, root, php, php_version,filename, no_ssl, edit, yes, dry_
     domains = domain.split(",")
     domain = domains[0]
 
-    if os.getuid() != 0:
-        click.echo("You must be root to run this script")
-        return 1
 
     website["ssl"] = not no_ssl
     checkDomains(domains)
@@ -97,8 +99,8 @@ def main(domain, proxy, root, php, php_version,filename, no_ssl, edit, yes, dry_
     if website["ssl"]:
         certbot(website["domains"]) 
     if edit:
-        click.echo("a")
         editConfig(filename)
+    nginx_reload()
     click.secho(f"Generated config is at {filename}", fg='green')
         
 def checkDomains(domains):
@@ -141,7 +143,11 @@ def write(filename):
 def certbot(domains):
     click.echo(f"Starting certbot for domains {' '.join(domains)}")
     """Runs certbot for specified domain"""
-    subprocess.run(["certbot","--nginx","-d",','.join(domains), "-n" if yes else ""])
+    command = ["certbot", "-d" , ','.join(domains), "--nginx", '-n' if yes else None]
+    command = list(filter(None, command))
+    if verbose:
+        click.echo(subprocess.list2cmdline(command))
+    subprocess.run(command)
 def nginx_reload():
     """Reloads nginx"""
     subprocess.run(["systemctl","reload","nginx"])
