@@ -28,9 +28,9 @@ Command line interface for generating nginx config files
       --help                 Show this message and exit.
 
 ### Examples
-    nginx-generator example.com,www.example.com --root /var/www/html
-    nginx-generator example.com,www.example.com --proxy http://localhost:8080/
-    nginx-generator example.com --root /var/www/html --php --php-version 8.0
+    sudo nginx-generator example.com,www.example.com --root /var/www/html
+    sudo nginx-generator example.com,www.example.com --proxy http://localhost:8080/
+    sudo nginx-generator example.com --root /var/www/html --php --php-version 8.0
 ## Installation
-    pip3 install nginx-generator
+    sudo pip3 install nginx-generator
 If you want to get ssl certificates, you need to install `certbot`, and for php you require `php-fpm`
