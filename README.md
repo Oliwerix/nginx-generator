@@ -53,3 +53,7 @@ The script is based on python, and is avaliable on PyPI
 ### Optional
  - [certbot](https://certbot.eff.org/) (for autoamtic SSL certificates)
  - php with php-fpm (for php support)
+
+# Roadmap
+- Add common service configs
+- Transition to a jinja master template
