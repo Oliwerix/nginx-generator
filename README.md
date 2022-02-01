@@ -33,4 +33,8 @@ Command line interface for generating nginx config files
     sudo nginx-generator example.com --root /var/www/html --php --php-version 8.0
 ## Installation
     sudo pip3 install nginx-generator
+### Dependancies
+The script is based on python, and is avaliable on PyPI
+ - python3.7
+ - pip
 If you want to get ssl certificates, you need to install `certbot`, and for php you require `php-fpm`
